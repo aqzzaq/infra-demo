@@ -61,6 +61,11 @@ variable "gcp_bgp_asn" {
   type        = number
   default     = 65000
 }
+variable "azure_spoke_bgp_asn"{
+  description = "Azure BGP ASN"
+  type        = number
+  default     = 65003 
+}
 
 variable "aws_availability_zone" {
   default = "us-east-1a"
@@ -68,4 +73,82 @@ variable "aws_availability_zone" {
 
 variable "gcp_vpc_name" {
   default = "gcp-vpc"
+}
+
+variable "resource_group_name" {
+  description = "Name of the Azure Resource Group"
+  type        = string
+  default     = "dev-rg"
+}
+
+variable "location" {
+  description = "Azure region"
+  type        = string
+  default     = "eastus"
+}
+
+variable "environment" {
+  description = "Environment tag"
+  type        = string
+  default     = "dev"
+}
+
+variable "vnet_cidr" {
+  description = "Virtual Network CIDR block"
+  type        = string
+  default     = "10.1.0.0/16"
+}
+
+variable "subnets" {
+  description = "Subnet configuration"
+  type = map(object({
+    address_prefixes = list(string)
+  }))
+  default = {
+    public = {
+      address_prefixes = ["10.1.1.0/24"]
+    }
+    private = {
+      address_prefixes = ["10.1.2.0/24"]
+    }
+  }
+}
+
+variable "nsg_rules" {
+  description = "Network Security Group rules"
+  type = list(object({
+    name                       = string
+    priority                   = number
+    direction                  = string
+    access                     = string
+    protocol                   = string
+    source_port_range          = string
+    destination_port_range     = string
+    source_address_prefix      = string
+    destination_address_prefix = string
+  }))
+  default = [
+    {
+      name                       = "allow-all-inbound"
+      priority                   = 100
+      direction                  = "Inbound"
+      access                     = "Allow"
+      protocol                   = "*"
+      source_port_range          = "*"
+      destination_port_range     = "*"
+      source_address_prefix      = "*"
+      destination_address_prefix = "*"
+    },
+    {
+      name                       = "allow-all-outbound"
+      priority                   = 101
+      direction                  = "Outbound"
+      access                     = "Allow"
+      protocol                   = "*"
+      source_port_range          = "*"
+      destination_port_range     = "*"
+      source_address_prefix      = "*"
+      destination_address_prefix = "*"
+    }
+  ]
 }

@@ -7,6 +7,14 @@ provider "google" {
   region  = var.gcp_region
 }
 
+provider "azurerm"{
+  features {
+    resource_group {
+      prevent_deletion_if_contains_resources = false
+    }
+  }
+}
+
 
 module "aws_network" {
   source = "./modules/aws/network"
@@ -55,9 +63,37 @@ module "gcp_vpn_tunnels" {
   gcp_bgp_asn           = var.gcp_bgp_asn
   shared_secret         = var.shared_secret
   aws_vpn_gateway_ips   = module.aws_vpn.vpn_gateway_public_ips
+  azure_vpn_gateway_ips = module.azure_spoke_vpn.vpn_gateway_public_ips
   aws_tunnel1_bgp_asn   = module.aws_vpn.aws_tunnel1_bgp_asn
   aws_tunnel2_bgp_asn   = module.aws_vpn.aws_tunnel2_bgp_asn
   aws_tunnel3_bgp_asn   = module.aws_vpn.aws_tunnel3_bgp_asn
   aws_tunnel4_bgp_asn   = module.aws_vpn.aws_tunnel4_bgp_asn  
   ha_vpn_gateway_id     = module.gcp_vpn_gateway.ha_vpn_gateway_id
+  azure_bgp_asn         = var.azure_spoke_bgp_asn
+  
 }
+
+module "azure_network" {
+  source = "./modules/azure/network"
+
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  environment         = var.environment
+  vnet_cidr           = var.vnet_cidr
+  subnets             = var.subnets
+  nsg_rules           = var.nsg_rules
+}
+
+module "azure_spoke_vpn" {
+  depends_on = [module.azure_network]
+  source = "./modules/azure/vpn"
+
+  resource_group_name  = var.resource_group_name
+  location             = var.location
+  gateway_subnet_id    = module.azure_network.gateway_subnet_id
+  gcp_bgp_asn         = var.gcp_bgp_asn
+  azure_spoke_bgp_asn  = var.azure_spoke_bgp_asn
+  shared_secret       = var.shared_secret
+  gcp_vpn_gateway_ips = module.gcp_vpn_gateway.ha_vpn_gateway_ips
+}
+
